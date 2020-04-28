@@ -1,7 +1,8 @@
 /coverage
 /es
 /lib
-/node_modules
+/node/node_modules
+/webpack/node_modules
 /umd
 npm-debug.log*
 .vscode
