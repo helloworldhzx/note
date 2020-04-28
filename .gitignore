@@ -1,0 +1,10 @@
+/coverage
+/es
+/lib
+/node_modules
+/umd
+npm-debug.log*
+.vscode
+yarn-error.log
+yarn.lock
+/test_component
