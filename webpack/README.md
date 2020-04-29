@@ -149,7 +149,7 @@ module: {
           // [hash:10] 取hash前10位
           // [ext] 文件原来的后缀
           name: '[hash:10].[ext]',
-          output: 'img' // 打包到img文件夹下
+          outputPath: 'img' // 打包到img文件夹下
         },
         }],
     }],
@@ -181,6 +181,26 @@ module: {
 将img里的图片通过模块引入，从而能被url-loader处理
 
 #### 其他资源file-loader
+#### css兼容性postcss-loader
+```
+ rules:[{
+      test:/\.css$/,
+      use: [
+        MiniCssExtractPlugin.loader,
+        "css-loader",
+        // postcss-preset-env帮postcss找到package.json中browserslist里面的配置，通过配置加载指定的兼容性
+        {
+            loader: "postcss-loader",
+            options: {
+                ident: "postcss",
+                plugins: ()=>{
+                    require("postcss-preset-env")()
+                }
+            }
+        }
+      ]
+    }]
+```
 
 ### 编写一个自己的markdown-loader
 添加一个markdown-loader.js文件
@@ -357,6 +377,27 @@ module.exports = {
     ])
   ]
 }
+```
+
+#### mini-css-extract-plugin打包单独的css文件
+```
+npm install --save-dev mini-css-extract-plugin
+
+module: {
+    rules:[{
+      test:/\.css$/,
+      use: [
+        // 创建style标签，引入样式
+        // "style-loader",
+        // 取代style-lodaer, 将css生成单独的文件再引入
+        MiniCssExtractPlugin.loader,
+        "css-loader"
+      ]
+    }]
+  },
+  plugins:[
+    new MiniCssExtractPlugin()
+  ]
 ```
 
 ### 编写一个自己的插件plugin  删除bundle里的/***/注释
