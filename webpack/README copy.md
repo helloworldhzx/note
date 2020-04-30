@@ -39,7 +39,9 @@ module.exports = {
   }
 }
 ```
+
 ## 自定义配置webpack
+
 之前打包使用的是webpack的默认配置，可以添加webpack.config.js文件自定义配置。  
 webpack.config.js 是一个运行在 Node.js 环境中的 JS 文件，我们需要按照 CommonJS的方式编写代码  
 
@@ -55,7 +57,8 @@ module.exports = {
 }
 ```
 
-## 让配置文件支持智能提示
+#### 让配置文件支持智能提示
+
 VSCode 对于代码的自动提示是根据成员的类型推断出来的，通过 import 的方式导入 Webpack 模块中的 Configuration类型，然后根据类型注释的方式将变量标注为这个类型，这样我们在编写这个对象的内部结构时就可以有正确的智能提示了
 ```
 // ./webpack.config.js
@@ -76,7 +79,7 @@ module.exports = config
 ```
 > P.S. 在编写配置时才需要，打包时需要注释掉，commonJs不支持import写法会报错。另外需要定义变量保存不能直接module.exports = {}，不然提示不生效
 
-## webpack工作模式
+#### webpack工作模式
 [mode](https://webpack.docschina.org/concepts/mode/) 配置选项，告知 webpack 使用相应环境的内置优化
 
 |选项 | 描述|
@@ -89,10 +92,10 @@ none          | 退出任何默认优化选项
  - webpack.config.js上配置mode属性
  - 通过CLI --mode=xxx 传入参数
 
-## loader
+### loader
 webpack 只能理解 JavaScript 和 JSON 文件。loader 让 webpack 能够去处理其他类型的文件，并将它们转换为有效 模块，以供应用程序使用，以及被添加到依赖图中。
 
-### 打包css样式资源
+#### 打包css样式资源
 不配置loader直接使用css文件是打包报错的,需要配置css-loader
 ```
 npm install css-loader --save-dev
@@ -123,7 +126,7 @@ module: {
 ```
 > P.S 有多个loader时是从右到左执行，需要注意loader之间的顺序
 
-### 打包图片资源
+#### 打包图片资源
 ```
 npm install url-loader --save-dev
 
@@ -177,8 +180,8 @@ module: {
 > P.S. html-loader是将HTML导出为字符串，默认情况下，每个可加载属性（例如- <img src="image.png">）都将导入（const img = require('./image.png')或import img from "./image.png"")
 将img里的图片通过模块引入，从而能被url-loader处理
 
-### 其他资源file-loader
-### css兼容性postcss-loader
+#### 其他资源file-loader
+#### css兼容性postcss-loader
 ```
  rules:[{
       test:/\.css$/,
@@ -198,85 +201,76 @@ module: {
       ]
     }]
 ```
-### mini-css-extract-plugin打包单独的css文件
-```
-npm install --save-dev mini-css-extract-plugin
 
-module: {
-    rules:[{
-      test:/\.css$/,
-      use: [
-        // 创建style标签，引入样式
-        // "style-loader",
-        // 取代style-lodaer, 将css生成单独的文件再引入
-        MiniCssExtractPlugin.loader,
-        "css-loader"
-      ]
-    }]
-  },
-  plugins:[
-    new MiniCssExtractPlugin()
-  ]
+### 编写一个自己的markdown-loader
+添加一个markdown-loader.js文件
 ```
-### optimize-css-assets-webpack-plugin 压缩css文件
-### js兼容性处理  转换成es5代码 babel-loader
-js兼容性处理 babel-loader @babel/core @babel/preset-env
-1. 基础的js处理--> @babel/preset-env
-   问题：只能处理基础的js问题，不能转换promise等
-2. 全部js兼容性处理--> @babel/polyfill
-   问题：会把所有兼容性问题都转换，很多不需要用到，增大文件体积
-3. 处理需要做兼容性问题的-按需加载--> core-js
-```
-module: {
-    rules:[{
-        test:/\.js$/,
-        exclude: /node_modules/,
-        loader: 'babel-loader',
-        options: {
-        //预设：指定babel做怎么样的兼容性处理
-          presets:[
-            [
-             "@babel/preset-env",
-             {
-               //按需加载
-                 useBuiltIns: "usage",
-                 // 指定corejs版本
-                 corejs:{
-                     version: 3
-                 }，
-                 //指定兼容性做到哪个版本浏览器
-                 targets:{
-                     chrome:60,
-                     ie:9
-                 }
-             }
-            ]
-          ]
-      },
-    }]
+// ./markdown-loader.js
+module.exports = source => {
+  // 加载到的模块内容 => '# About\n\nthis is a markdown file.'
+  console.log(source)
+  // 返回值就是最终被打包的内容
+  return 'hello loader ~'
 }
 ```
-### js语法检查eslint
-语法检查 eslint-loader eslint  
-注意只检查自己代码，不用检查第三方库  
-设置检查规则：package.json中eslintConfig中设置,也能配置单独文件.eslintrc  
-` "eslintConfig":{"extends":"airbnb-base"}`  
- 需要安装 eslint-config-airbnb-base eslint-plugin-import eslint
+在webpack.config.js文件配置
 ```
 module: {
-    rules:[{
-        test:/\.js$/,
-        exclude: /node_modules/,
-        loader: 'eslint-loader',
-        options: {
-          fix: true, // 打包时自动修复
-      },
-    }]
-}
+    rules: [
+      {
+        test: /\.md$/,
+        // 直接使用相对路径
+        use: './markdown-loader'
+      }
+    ]
+  }
 ```
-> P.S 打包时console会警告，可以在使用console代码前加一句注释`// eslint-disable-next-line`  
+现在打包会报错，因为 Webpack加载资源文件的过程类似于一个工作管道，你可以在这个过程中依次使用多个 Loader，但是最终这个管道结束过后的结果必须是一段标准的 JS 代码字符串。
+![loader](/loader.png)
 
-## 插件plugin
+解决的办法
+- 直接在这个 Loader 的最后返回一段 JS 代码字符串
+- 再找一个合适的加载器，在后面接着处理我们这里得到的结果。
+```
+// ./markdown-loader.js
+const marked = require('marked')
+
+module.exports = source => {
+  // 1. 将 markdown 转换为 html 字符串
+  const html = marked(source)
+  // 2. 将 html 字符串拼接为一段导出字符串的 JS 代码
+  const code = `module.exports = ${JSON.stringify(html)}`
+  return code 
+  // code => 'export default "<h1>About</h1><p>this is a markdown file.</p>"'
+}
+
+```
+多个loader，直接返回html，再由html-loader处理返回js代码
+```
+// ./markdown-loader.js
+const marked = require('marked')
+
+module.exports = source => {
+  // 1. 将 markdown 转换为 html 字符串
+  const html = marked(source)
+  return html
+}
+
+// webpack-config.js 注意loader顺序
+ module: {
+    rules: [
+      {
+        test: /\.md$/,
+        use: [
+          'html-loader',
+          './markdown-loader'
+        ]
+      }
+    ]
+  }
+```
+
+### 插件plugin
 插件用于执行范围更广的任务。包括：打包优化，资源管理，注入环境变量。 
 
 几个插件最常见的应用场景：
@@ -286,7 +280,9 @@ module: {
 - 拷贝不需要参与打包的资源文件到输出目录；
 - 压缩 Webpack 打包完成后输出的文件；
 - 自动发布打包结果到服务器实现自动部署。
-### clean-webpack-plugin用来自动清除输出目录的插件
+
+#### 插件介绍和使用
+##### clean-webpack-plugin用来自动清除输出目录的插件
 ```
 npm install clean-webpack-plugin --save-dev
 
@@ -299,7 +295,7 @@ module.exports = {
   ]
 }
 ```
-### html-webpack-plugin用来生成html页面，自动引入打包后的js，css不需要手动修改
+##### html-webpack-plugin用来生成html页面，自动引入打包后的js，css不需要手动修改
 ```
 $ npm install html-webpack-plugin --save-dev
 // ./webpack.config.js
@@ -368,7 +364,7 @@ module.exports = {
   ]
 }
 ```
-### copy-webpack-plugin用于复制文件
+##### copy-webpack-plugin用于复制文件
 ```
 $ npm install copy-webpack-plugin --save-dev
 // ./webpack.config.js
@@ -382,7 +378,8 @@ module.exports = {
   ]
 }
 ```
-### mini-css-extract-plugin打包单独的css文件
+
+#### mini-css-extract-plugin打包单独的css文件
 ```
 npm install --save-dev mini-css-extract-plugin
 
@@ -402,77 +399,8 @@ module: {
     new MiniCssExtractPlugin()
   ]
 ```
-### optimize-css-assets-webpack-plugin 压缩css文件
 
-## 编写一个自己的markdown-loader
-添加一个markdown-loader.js文件
-```
-// ./markdown-loader.js
-module.exports = source => {
-  // 加载到的模块内容 => '# About\n\nthis is a markdown file.'
-  console.log(source)
-  // 返回值就是最终被打包的内容
-  return 'hello loader ~'
-}
-```
-在webpack.config.js文件配置
-```
-module: {
-    rules: [
-      {
-        test: /\.md$/,
-        // 直接使用相对路径
-        use: './markdown-loader'
-      }
-    ]
-  }
-```
-现在打包会报错，因为 Webpack加载资源文件的过程类似于一个工作管道，你可以在这个过程中依次使用多个 Loader，但是最终这个管道结束过后的结果必须是一段标准的 JS 代码字符串。
-![loader](/loader.png)
-
-解决的办法
-- 直接在这个 Loader 的最后返回一段 JS 代码字符串
-- 再找一个合适的加载器，在后面接着处理我们这里得到的结果。
-```
-// ./markdown-loader.js
-const marked = require('marked')
-
-module.exports = source => {
-  // 1. 将 markdown 转换为 html 字符串
-  const html = marked(source)
-  // 2. 将 html 字符串拼接为一段导出字符串的 JS 代码
-  const code = `module.exports = ${JSON.stringify(html)}`
-  return code 
-  // code => 'export default "<h1>About</h1><p>this is a markdown file.</p>"'
-}
-
-```
-多个loader，直接返回html，再由html-loader处理返回js代码
-```
-// ./markdown-loader.js
-const marked = require('marked')
-
-module.exports = source => {
-  // 1. 将 markdown 转换为 html 字符串
-  const html = marked(source)
-  return html
-}
-
-// webpack-config.js 注意loader顺序
- module: {
-    rules: [
-      {
-        test: /\.md$/,
-        use: [
-          'html-loader',
-          './markdown-loader'
-        ]
-      }
-    ]
-  }
-```
-
-## 编写一个自己的插件plugin  删除bundle里的/***/注释
+### 编写一个自己的插件plugin  删除bundle里的/***/注释
 Webpack 要求我们的插件必须是一个函数或者是一个包含 apply 方法的对象，一般我们都会定义一个类，在这个类中定义 apply 方法。然后在使用时，再通过这个类来创建一个实例对象去使用这个插件。
 ```
 // ./remove-comments-plugin.js
